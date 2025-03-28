@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Викторина по прикладной информатике</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .quiz-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .timer-container {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .question {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            line-height: 1.5;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .option {
+            padding: 14px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: 1em;
+        }
+        .option:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        .option:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 18px;
+            border-radius: 6px;
+            display: none;
+            font-size: 1.1em;
+        }
+        .correct {
+            background-color: #27ae60;
+            color: white;
+        }
+        .incorrect {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .timeout {
+            background-color: #f39c12;
+            color: white;
+        }
+        .next-btn {
+            padding: 12px 24px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: none;
+            margin: 20px auto 0;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        .next-btn:hover {
+            background-color: #1a252f;
+        }
+        .score-container {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .progress-container {
+            margin-bottom: 25px;
+        }
+        .progress-text {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .progress-bar {
+            height: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .code-block {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .category {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #9b59b6;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .final-screen {
+            text-align: center;
+            padding: 20px;
+        }
+        .final-score {
+            font-size: 1.5em;
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+        .restart-btn {
+            padding: 12px 24px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .restart-btn:hover {
+            background-color: #219653;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Викторина по прикладной информатике</h1>
+        
+        <div class="timer-container">
+            Осталось времени: <span id="timer">30</span> сек
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-text">
+                <span>Вопрос <span id="current-q">1</span> из 15</span>
+                <span>Счет: <span id="score-display">0</span></span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+        </div>
+        
+        <div id="category" class="category"></div>
+        <div class="question" id="question"></div>
+        <div class="options" id="options"></div>
+        <div class="result" id="result"></div>
+        <button class="next-btn" id="next-btn">Следующий вопрос →</button>
+        
+        <div id="final-screen" class="final-screen" style="display: none;">
+            <h2>Викторина завершена!</h2>
+            <div class="final-score">Ваш результат: <span id="final-score">0</span> из 15</div>
+            <button class="restart-btn" id="restart-btn">Пройти еще раз</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                category: "C#",
+                question: "Какой метод используется в C# для вывода текста в консоль?",
+                code: "// Какой метод нужно использовать?\n...(\"Привет, мир!\");",
+                options: ["Console.Write()", "print()", "System.out.println()", "echo()"],
+                answer: 0,
+                explanation: "Правильный ответ: Console.Write() или Console.WriteLine() - стандартные методы для вывода в консоль в C#."
+            },
+            {
+                category: "C#",
+                question: "Какой оператор проверяет равенство значений в C#?",
+                options: ["=", "==", "===", "equals"],
+                answer: 1,
+                explanation: "Оператор '==' проверяет равенство значений, в то время как '=' - это оператор присваивания."
+            },
+            {
+                category: "C#",
+                question: "Как объявить массив целых чисел в C#?",
+                options: [
+                    "int[] numbers = new int[5];", 
+                    "int numbers[] = new int[5];", 
+                    "array<int> numbers = new array<int>(5);", 
+                    "List<int> numbers = new List<int>(5);"
+                ],
+                answer: 0,
+                explanation: "Правильный синтаксис для массива в C#: тип[] имя = new тип[размер];"
+            },
+            {
+                category: "Базы данных",
+                question: "Какой оператор SQL используется для извлечения данных из таблицы?",
+                options: ["GET", "SELECT", "EXTRACT", "QUERY"],
+                answer: 1,
+                explanation: "Оператор SELECT используется для запроса данных из таблицы в SQL."
+            },
+            {
+                category: "Базы данных",
+                question: "Какой тип связи наиболее распространен в реляционных базах данных?",
+                options: ["Один-к-одному", "Один-ко-многим", "Многие-ко-многим", "Иерархическая"],
+                answer: 1,
+                explanation: "Связь 'один-ко-многим' - наиболее распространенный тип связи в реляционных БД."
+            },
+            {
+                category: "Базы данных",
+                question: "Какой оператор SQL используется для добавления новых записей?",
+                options: ["ADD", "CREATE", "INSERT", "UPDATE"],
+                answer: 2,
+                explanation: "Оператор INSERT добавляет новые записи в таблицу."
+            },
+            {
+                category: "Web",
+                question: "Какой тег используется для создания ссылки в HTML?",
+                options: ["<link>", "<a>", "<href>", "<url>"],
+                answer: 1,
+                explanation: "Тег <a> с атрибутом href создает гиперссылку в HTML."
+            },
+            {
+                category: "Web",
+                question: "Какой CSS-селектор выбирает элементы по классу?",
+                options: [".class", "#id", "*", "tag"],
+                answer: 0,
+                explanation: "Селектор .class выбирает элементы по имени класса."
+            },
+            {
+                category: "Web",
+                question: "Какой HTTP-метод используется для отправки данных формы?",
+                options: ["GET", "POST", "SEND", "SUBMIT"],
+                answer: 1,
+                explanation: "Метод POST используется для отправки данных на сервер."
+            },
+            {
+                category: "C#",
+                question: "Какой тип данных используется для хранения логических значений в C#?",
+                options: ["boolean", "bool", "logical", "bit"],
+                answer: 1,
+                explanation: "Тип bool (сокращение от boolean) используется для хранения true/false значений."
+            },
+            {
+                category: "Базы данных",
+                question: "Как называется столбец, однозначно идентифицирующий каждую строку таблицы?",
+                options: ["Основной столбец", "Первичный ключ", "Уникальный идентификатор", "Главный столбец"],
+                answer: 1,
+                explanation: "Первичный ключ (Primary Key) однозначно идентифицирует каждую запись в таблице."
+            },
+            {
+                category: "Web",
+                question: "Какой язык выполняется в браузере пользователя?",
+                options: ["PHP", "JavaScript", "C#", "SQL"],
+                answer: 1,
+                explanation: "JavaScript - это клиентский язык, который выполняется в браузере пользователя."
+            },
+            {
+                category: "C#",
+                question: "Какой оператор используется для создания объекта в C#?",
+                options: ["new", "create", "make", "object"],
+                answer: 0,
+                explanation: "Ключевое слово new создает новый экземпляр объекта в C#."
+            },
+            {
+                category: "Базы данных",
+                question: "Какой оператор SQL используется для сортировки результатов?",
+                options: ["SORT BY", "ORDER BY", "GROUP BY", "ARRANGE BY"],
+                answer: 1,
+                explanation: "Оператор ORDER BY сортирует результаты запроса."
+            },
+            {
+                category: "Web",
+                question: "Какой тег содержит JavaScript код в HTML?",
+                options: ["<javascript>", "<js>", "<script>", "<code>"],
+                answer: 2,
+                explanation: "Тег <script> используется для вставки JavaScript кода в HTML."
+            }
+        ];
+
+        // Элементы DOM
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const resultElement = document.getElementById('result');
+        const nextButton = document.getElementById('next-btn');
+        const timerElement = document.getElementById('timer');
+        const categoryElement = document.getElementById('category');
+        const progressFill = document.getElementById('progress');
+        const currentQElement = document.getElementById('current-q');
+        const scoreDisplay = document.getElementById('score-display');
+        const finalScreen = document.getElementById('final-screen');
+        const finalScoreElement = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-btn');
+
+        // Переменные викторины
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 30;
+
+        // Запуск таймера
+        function startTimer() {
+            timeLeft = 30;
+            timerElement.textContent = timeLeft;
+            
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    timeExpired();
+                }
+            }, 1000);
+        }
+
+        // Обработка истечения времени
+        function timeExpired() {
+            const question = questions[currentQuestionIndex];
+            
+            // Отключаем все кнопки
+            const optionButtons = document.querySelectorAll('.option');
+            optionButtons.forEach(button => {
+                button.disabled = true;
+            });
+            
+            // Показываем правильный ответ
+            resultElement.textContent = `Время истекло! Правильный ответ: ${question.options[question.answer]}. ${question.explanation}`;
+            resultElement.className = "result timeout";
+            resultElement.style.display = 'block';
+            nextButton.style.display = 'block';
+            
+            // Обновляем счет
+            scoreDisplay.textContent = score;
+        }
+
+        // Загрузка вопроса
+        function loadQuestion() {
+            const question = questions[currentQuestionIndex];
+            
+            // Очищаем предыдущие варианты
+            optionsElement.innerHTML = '';
+            
+            // Устанавливаем категорию
+            categoryElement.textContent = question.category;
+            
+            // Отображаем вопрос
+            let questionHTML = question.question;
+            if (question.code) {
+                questionHTML += `<div class="code-block">${question.code}</div>`;
+            }
+            questionElement.innerHTML = questionHTML;
+            
+            // Добавляем варианты ответов
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.classList.add('option');
+                button.textContent = option;
+                button.addEventListener('click', () => {
+                    clearInterval(timer);
+                    selectAnswer(index);
+                });
+                optionsElement.appendChild(button);
+            });
+            
+            // Обновляем прогресс
+            progressFill.style.width = `${(currentQuestionIndex / questions.length) * 100}%`;
+            currentQElement.textContent = currentQuestionIndex + 1;
+            
+            // Скрываем результат и кнопку "Далее"
+            resultElement.style.display = 'none';
+            nextButton.style.display = 'none';
+            
+            // Запускаем таймер
+            startTimer();
+        }
+
+        // Обработка выбора ответа
+        function selectAnswer(selectedIndex) {
+            const question = questions[currentQuestionIndex];
+            
+            // Отключаем все кнопки
+            const optionButtons = document.querySelectorAll('.option');
+            optionButtons.forEach(button => {
+                button.disabled = true;
+            });
+            
+            // Проверяем ответ
+            if (selectedIndex === question.answer) {
+                resultElement.textContent = "Правильно! " + question.explanation;
+                resultElement.className = "result correct";
+                score++;
+            } else {
+                resultElement.textContent = `Неправильно. Правильный ответ: ${question.options[question.answer]}. ${question.explanation}`;
+                resultElement.className = "result incorrect";
+            }
+            
+            // Показываем результат и кнопку "Далее"
+            resultElement.style.display = 'block';
+            nextButton.style.display = 'block';
+            
+            // Обновляем счет
+            scoreDisplay.textContent = score;
+        }
+
+        // Переход к следующему вопросу
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showFinalScreen();
+            }
+        }
+
+        // Показ финального экрана
+        function showFinalScreen() {
+            document.querySelector('.quiz-container > *:not(#final-screen)').style.display = 'none';
+            finalScreen.style.display = 'block';
+            finalScoreElement.textContent = `${score} из ${questions.length}`;
+        }
+
+        // Перезапуск викторины
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreDisplay.textContent = '0';
+            
+            // Показываем все элементы викторины
+            document.querySelectorAll('.quiz-container > *').forEach(el => {
+                el.style.display = '';
+            });
+            
+            // Скрываем финальный экран
+            finalScreen.style.display = 'none';
+            
+            // Загружаем первый вопрос
+            loadQuestion();
+        }
+
+        // Назначение обработчиков событий
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', restartQuiz);
+
+        // Начало викторины
+        loadQuestion();
+    </script>
+</body>
+</html>
